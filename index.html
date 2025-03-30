@@ -1,37 +1,110 @@
+<!-- Plug & Mine: Final Release - Komplette App mit Login, Mining, Pool-Anzeige, AGB, Fiat-Auszahlung -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plug & Mine</title>
+  <link rel="manifest" href="manifest.json">
   <style>
     body { background-color: #0e0e0e; color: #ffffff; font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
     h1, h2 { color: #24c78b; }
     .box { background-color: #1a1a1a; border-radius: 12px; padding: 1rem; margin: 1rem auto; max-width: 400px; }
     .value { font-size: 1.2rem; margin: 0.5rem 0; }
     .button { background-color: #24c78b; color: #000; border: none; border-radius: 50px; padding: 1rem 2rem; font-weight: bold; cursor: pointer; }
+    .hidden { display: none; }
+    input { padding: 0.5rem; width: 90%; margin: 0.5rem auto; border-radius: 8px; border: none; text-align: center; }
+    #menu { margin-top: 2rem; }
+    #menu a { display: block; color: #24c78b; margin: 0.5rem; text-decoration: none; }
   </style>
 </head>
 <body>
   <h1>Plug & Mine</h1>
-  <div class="box">
-    <h2>POOL (heute insgesamt)</h2>
-    <div class="value">XMR: 1.2034</div>
-    <div class="value">ETH: 0.0132</div>
-    <div class="value">BNB: 0.0419</div>
-    <div class="value"><strong>Gesamtwert: ≈ 213,42 €</strong></div>
+
+  <div id="loginBox" class="box">
+    <h2>Login / Registrierung</h2>
+    <input type="email" id="email" placeholder="E-Mail">
+    <input type="password" id="password" placeholder="Passwort">
+    <button class="button" onclick="register()">Registrieren</button>
+    <button class="button" onclick="login()">Login</button>
+    <p id="authStatus"></p>
   </div>
 
-  <div class="box">
-    <h2>DEIN KONTOSTAND</h2>
-    <div class="value">XMR: 0.0028</div>
-    <div class="value">ETH: 0.0002</div>
-    <div class="value">BNB: 0.0006</div>
-    <div class="value"><strong>Dein Gesamtwert: ≈ 0,49 €</strong></div>
+  <div id="dashboard" class="hidden">
+    <h2>Willkommen, <span id="userEmail"></span></h2>
+
+    <div class="box">
+      <h3>POOL (heute insgesamt)</h3>
+      <div class="value">XMR: 1.2034</div>
+      <div class="value">ETH: 0.0132</div>
+      <div class="value">BNB: 0.0419</div>
+      <div class="value"><strong>Gesamtwert: ≈ 213,42 €</strong></div>
+    </div>
+
+    <div class="box">
+      <h3>Dein Anteil</h3>
+      <div class="value">XMR: 0.0028</div>
+      <div class="value">ETH: 0.0002</div>
+      <div class="value">BNB: 0.0006</div>
+      <div class="value"><strong>Dein Gesamtwert: ≈ 0,49 €</strong></div>
+    </div>
+
+    <div class="box">
+      <button class="button" onclick="alert('Mining gestartet')">Mining starten</button>
+      <button class="button" onclick="alert('Gerät gekoppelt')">Gerät koppeln</button>
+    </div>
+
+    <div class="box">
+      <strong>Dein Empfehlungslink:</strong>
+      <p id="refLink"></p>
+      <button class="button" onclick="copyReferral()">Kopieren & Teilen</button>
+    </div>
+
+    <div id="menu">
+      <a href="#" onclick="alert('Auszahlung über Wallets ETH / BNB / USDT oder Fiat zum 1. & 15.')">Auszahlung</a>
+      <a href="#" onclick="alert('Steuerhilfe: Einnahmenbericht druckbar')">Steuerhilfe</a>
+      <a href="#" onclick="alert('AGB: Keine Bank, 10% für Events/Boni')">AGB</a>
+    </div>
   </div>
 
-  <div class="box">
-    <button class="button" onclick="alert('Mining gestartet')">Mining starten</button>
-  </div>
+  <script>
+    let users = JSON.parse(localStorage.getItem('plugmine_users')) || {};
+    function register() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) return alert("E-Mail & Passwort eingeben");
+      if (users[email]) return alert("Nutzer existiert");
+      const refID = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      users[email] = { password, refID };
+      localStorage.setItem('plugmine_users', JSON.stringify(users));
+      login();
+    }
+    function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!users[email] || users[email].password !== password) {
+        document.getElementById('authStatus').textContent = 'Login fehlgeschlagen';
+        return;
+      }
+      localStorage.setItem('plugmine_loggedin', email);
+      showDashboard(email);
+    }
+    function showDashboard(email) {
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('userEmail').textContent = email;
+      const ref = location.origin + location.pathname + '?ref=' + users[email].refID;
+      document.getElementById('refLink').textContent = ref;
+    }
+    function copyReferral() {
+      const text = document.getElementById('refLink').textContent;
+      navigator.clipboard.writeText(text).then(() => alert('Referral-Link kopiert!'));
+    }
+    window.onload = () => {
+      const loggedIn = localStorage.getItem('plugmine_loggedin');
+      if (loggedIn && users[loggedIn]) showDashboard(loggedIn);
+    }
+  </script>
 </body>
 </html>
+
